@@ -1,0 +1,19 @@
+# Maven
+target/
+*.class
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+nbproject/
+nbactions.xml
+nb-configuration.xml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Configuración local de BD (no compartir credenciales)
+db.properties
+src/main/resources/db.properties

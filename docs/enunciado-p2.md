@@ -357,14 +357,38 @@ Ninguna URL, usuario o contraseña de base de datos va hardcodeada en el código
 
 ### 6.1 Sincronizar con la base de P2
 
-El profesor mergeó la base de P2 (Docker + MariaDB + SPA + skeleton del API) a `main` en el repositorio original.
+La base de P2 (Docker + MariaDB + SPA + skeleton del API) está publicada en el repositorio original como el tag `v1.0`, la misma idea que `v0.0` para la base de P1.
+
+El `main` de su fork y el `main` del repositorio original **divergieron**: el suyo tiene por delante sus propios commits de P1, y le faltan los commits nuevos de P2. Es la situación normal al sincronizar un fork después de trabajar en él, no hay que rehacer nada, se resuelve con un merge.
 
 ```bash
 git checkout main
-git pull upstream main
+git fetch upstream --tags
+git merge v1.0
 ```
 
-Si tienen conflictos con su trabajo de P1 en `main`, resuélvanlos priorizando conservar su modelo de dominio (Empleado, Edificio, Aula, Seccion) tal como quedó evaluado.
+Si `git fetch upstream` falla porque no tienen ese remote (se agrega en P1), créenlo primero:
+```bash
+git remote add upstream https://github.com/jocoto14/educore.git
+```
+
+El merge casi seguro marca **conflicto en `Main.java`**: en P1 lo modificaron para arrancar su menú de consola; en P2 pasa a arrancar el servidor API (`ServidorApi.iniciar`). Es el único archivo que la mayoría de los grupos tocó en P1 y que la base de P2 también cambia.
+
+\begin{tipbox}
+\textbf{Cómo resolver el conflicto de \texttt{Main.java}, en 4 pasos:}
+1. Ábranlo. Van a ver marcas \texttt{<<<<<<<}, \texttt{=======}, \texttt{>>>>>>>} alrededor de las dos versiones.
+2. Quédense con el lado que llama a \texttt{ServidorApi.iniciar(puerto)} (el de \texttt{v1.0}) y borren su menú de consola: en P2 la consola se retira, todo pasa por la SPA en el navegador.
+3. Borren a mano las tres líneas de marcas (\texttt{<<<<<<<}, \texttt{=======}, \texttt{>>>>>>>}); no se les puede quedar ninguna en el archivo.
+4. \texttt{git add src/main/java/edu/uam/educore/Main.java} y luego \texttt{git commit} (acepten el mensaje que Git propone, no hace falta escribir uno nuevo).
+\end{tipbox}
+
+Si aparece algún otro conflicto (por ejemplo en `pom.xml`), la regla general: quédense con **su** versión en todo lo que sea su modelo de dominio (Empleado, Edificio, Aula, Seccion), y con la versión **entrante** (`v1.0`) en todo lo de infraestructura (`api/`, `socket/`, `db/`, Docker, dependencias nuevas del `pom.xml`).
+
+Terminado el merge, verifiquen que compila y suban el resultado a su fork:
+```bash
+mvn compile
+git push origin main
+```
 
 ### 6.2 Durante el desarrollo
 

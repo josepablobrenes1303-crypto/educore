@@ -77,11 +77,12 @@ El tag de entrega debe pasar `mvn fmt:check` sin errores.
 
 ```
 src/main/java/edu/uam/educore/
-├── model/        ← entidades del dominio (personas, academico, infraestructura)
+├── model/        ← entidades del dominio (personas resuelto; academico e infraestructura los crean ustedes)
 ├── dao/          ← repositorios (contrato Repositorio<T> + implementaciones)
 ├── controller/   ← coordinan validación y persistencia
 ├── view/         ← interacción por consola (heredan de VistaBase)
-├── enums/        ← enumeraciones del dominio
+├── api/          ← servidor REST y SPA (Proyecto 2)
+├── socket/       ← servidores de socket: Matrícula y Reportes (Proyecto 2)
 ├── util/         ← utilidades (Validador)
 └── db/           ← fábrica de conexiones a la base de datos (Proyecto 2)
 ```
@@ -92,6 +93,7 @@ cuatro capas. Repliquen ese patrón en los módulos que diseñen.
 ## Flujo de Git y entregas
 
 Cada grupo trabaja sobre su fork, con una rama por módulo, y entrega marcando un
-tag anotado. El docente publica la base como `v0.0` y califica el código en el
-tag exacto de cada entrega. Los detalles (nombre del tag, ramas, entregables y
+tag anotado. El docente publica la base de cada proyecto como un tag (`v0.0`
+para el Proyecto 1, `v1.0` para el Proyecto 2) y califica el código en el tag
+exacto de cada entrega. Los detalles (nombre del tag, ramas, entregables y
 rúbrica) están en el enunciado de cada proyecto.

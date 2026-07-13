@@ -23,7 +23,7 @@ sistema lo diseñan ustedes.
 - Java 21
 - Apache Maven 3.8+
 - NetBeans (recomendado) o cualquier IDE compatible con Maven
-- MySQL 8 + Docker (solo para el Proyecto 2)
+- MariaDB + Docker (solo para el Proyecto 2)
 
 ## Cómo empezar
 
@@ -56,6 +56,13 @@ mvn exec:java -Dexec.mainClass=edu.uam.educore.Main
 
 (o ejecuten `Main` desde el IDE).
 
+> **Nota (Proyecto 2):** si ya crearon su `.env` para Docker, `DB_HOST=db` solo resuelve dentro
+> de la red de Docker Compose. Corriendo así, fuera de Docker (IDE o `mvn exec:java`), cualquier
+> endpoint que consulte la base de datos va a fallar con un error de conexión — es esperado, no
+> un bug. Para desarrollar así (más rápido que reconstruir la imagen en cada cambio), corran solo
+> `docker compose up db` y cambien `DB_HOST` a `localhost` y el puerto a `DB_HOST_PORT` en su
+> `.env` local (no el que usa Docker Compose).
+
 ### 5. Formatear antes de cada commit
 
 No hay hook automático: **antes de cada commit** formateen sus archivos a mano.
@@ -76,7 +83,7 @@ src/main/java/edu/uam/educore/
 ├── view/         ← interacción por consola (heredan de VistaBase)
 ├── enums/        ← enumeraciones del dominio
 ├── util/         ← utilidades (Validador)
-└── db/           ← fábrica de conexiones MySQL (Proyecto 2)
+└── db/           ← fábrica de conexiones a la base de datos (Proyecto 2)
 ```
 
 La rama `Estudiante` está completa **a propósito**: muestra cómo se conectan las

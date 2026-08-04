@@ -18,8 +18,25 @@ CREATE TABLE estudiante (
   porcentaje_beca DECIMAL(3,2) NULL               -- solo becados (0.00 .. 1.00)
 );
 
+CREATE TABLE empleado (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  nombre         VARCHAR(100) NOT NULL,
+  apellidos      VARCHAR(100) NOT NULL,
+  email          VARCHAR(150) NOT NULL,
+  salario        DECIMAL(12,2) NOT NULL,
+  fecha_ingreso  DATE NOT NULL,
+  tipo           VARCHAR(20) NOT NULL
+);
+
 -- ── Datos semilla ────────────────────────────────────────────────────────────
 INSERT INTO estudiante (tipo, nombre, apellidos, email, carnet, porcentaje_beca) VALUES
   ('REGULAR', 'Ana',   'Rojas Mora',   'ana.rojas@uam.edu',   '202410000001', NULL),
   ('REGULAR', 'Luis',  'Castro Vega',  'luis.castro@uam.edu', '202410000002', NULL),
   ('BECADO',  'Marta', 'Solis Pena',   'marta.solis@uam.edu', '202410000003', 0.50);
+
+INSERT INTO empleado
+  (nombre, apellidos, email, salario, fecha_ingreso, tipo)
+VALUES
+  ('Carlos', 'Jimenez Mora', 'carlos.jimenez@uam.edu', 850000.00, '2022-01-15', 'DOCENTE'),
+  ('Maria', 'Gomez Vega', 'maria.gomez@uam.edu', 620000.00, '2023-03-01', 'ADMINISTRATIVO'),
+  ('Jose', 'Perez Solano', 'jose.perez@uam.edu', 500000.00, '2021-08-20', 'GUARDA');

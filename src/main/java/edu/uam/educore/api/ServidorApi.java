@@ -231,13 +231,16 @@ SeccionController seccionController =
 
   // ── Edificios / Aulas (P1 de cada grupo — sin controlador de nombre fijo) ──
 
-  private static void registrarEdificios(JavalinConfig cfg, EdificioController edificioController) {
+  private static void registrarEdificios(
+    JavalinConfig cfg,
+    EdificioController edificioController) {
+
   cfg.routes.get(
-    "/api/edificios",
-    ctx -> {
-      List<Edificio> edificios = edificioController.listar();
-      ctx.json(edificios);
-    });
+      "/api/edificios",
+      ctx -> {
+        List<Edificio> edificios = edificioController.listar();
+        ctx.json(Dtos.EdificioDto.listaDesde(edificios));
+      });
   
 cfg.routes.post(
     "/api/edificios",

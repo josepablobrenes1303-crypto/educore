@@ -1,27 +1,26 @@
 package edu.uam.educore.api;
 
-
-import edu.uam.educore.controller.SeccionController;
-import edu.uam.educore.dao.SeccionRepoSql;
-import edu.uam.educore.model.academico.Seccion;
+import edu.uam.educore.api.Dtos.EmpleadoDto;
+import edu.uam.educore.api.Dtos.EmpleadoRequest;
 import edu.uam.educore.api.Dtos.EstudianteDto;
 import edu.uam.educore.api.Dtos.EstudianteRequest;
 import edu.uam.educore.api.Dtos.MatriculaRequest;
+import edu.uam.educore.controller.EdificioController;
+import edu.uam.educore.controller.EmpleadoController;
 import edu.uam.educore.controller.EstudianteController;
+import edu.uam.educore.controller.SeccionController;
+import edu.uam.educore.dao.EdificioRepoSql;
+import edu.uam.educore.dao.EmpleadoRepoSql;
 import edu.uam.educore.dao.EstudianteRepoSql;
 import edu.uam.educore.dao.ListaEstudianteRepo;
-import edu.uam.educore.api.Dtos.EmpleadoDto;
-import edu.uam.educore.api.Dtos.EmpleadoRequest;
-import edu.uam.educore.controller.EmpleadoController;
-import edu.uam.educore.dao.EmpleadoRepoSql;
-import edu.uam.educore.controller.EdificioController;
-import edu.uam.educore.dao.EdificioRepoSql;
-import edu.uam.educore.model.infraestructura.Aula;
-import edu.uam.educore.model.infraestructura.TipoAula;
-import edu.uam.educore.model.infraestructura.Edificio;
-import edu.uam.educore.model.personas.Empleado;
 import edu.uam.educore.dao.Repositorio;
+import edu.uam.educore.dao.SeccionRepoSql;
 import edu.uam.educore.db.ConfiguracionBD;
+import edu.uam.educore.model.academico.Seccion;
+import edu.uam.educore.model.infraestructura.Aula;
+import edu.uam.educore.model.infraestructura.Edificio;
+import edu.uam.educore.model.infraestructura.TipoAula;
+import edu.uam.educore.model.personas.Empleado;
 import edu.uam.educore.model.personas.Estudiante;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
@@ -54,44 +53,36 @@ public class ServidorApi {
     }
 
     EstudianteController estudianteController = new EstudianteController(estudianteRepo);
-    
+
     Repositorio<Empleado> empleadoRepo;
-try {
-  empleadoRepo = new EmpleadoRepoSql(ConfiguracionBD.desdeArchivo(".env"));
-} catch (IOException e) {
-  throw new RuntimeException("No se pudo inicializar el repositorio de empleados.", e);
-}
+    try {
+      empleadoRepo = new EmpleadoRepoSql(ConfiguracionBD.desdeArchivo(".env"));
+    } catch (IOException e) {
+      throw new RuntimeException("No se pudo inicializar el repositorio de empleados.", e);
+    }
 
-EmpleadoController empleadoController = new EmpleadoController(empleadoRepo);
+    EmpleadoController empleadoController = new EmpleadoController(empleadoRepo);
 
-Repositorio<Edificio> edificioRepo;
+    Repositorio<Edificio> edificioRepo;
 
-try {
-  edificioRepo = new EdificioRepoSql(ConfiguracionBD.desdeArchivo(".env"));
-} catch (IOException e) {
-  throw new RuntimeException(
-      "No se pudo inicializar el repositorio de edificios.", e);
-}
+    try {
+      edificioRepo = new EdificioRepoSql(ConfiguracionBD.desdeArchivo(".env"));
+    } catch (IOException e) {
+      throw new RuntimeException("No se pudo inicializar el repositorio de edificios.", e);
+    }
 
-EdificioController edificioController =
-    new EdificioController(edificioRepo);
+    EdificioController edificioController = new EdificioController(edificioRepo);
 
-Repositorio<Seccion> seccionRepo;
+    Repositorio<Seccion> seccionRepo;
 
-try {
-  seccionRepo =
-      new SeccionRepoSql(ConfiguracionBD.desdeArchivo(".env"));
-} catch (IOException e) {
-  throw new RuntimeException(
-      "No se pudo inicializar el repositorio de secciones.", e);
-}
+    try {
+      seccionRepo = new SeccionRepoSql(ConfiguracionBD.desdeArchivo(".env"));
+    } catch (IOException e) {
+      throw new RuntimeException("No se pudo inicializar el repositorio de secciones.", e);
+    }
 
-SeccionController seccionController =
-    new SeccionController(
-        seccionRepo,
-        empleadoRepo,
-        estudianteRepo,
-        edificioRepo);
+    SeccionController seccionController =
+        new SeccionController(seccionRepo, empleadoRepo, estudianteRepo, edificioRepo);
 
     Javalin app =
         Javalin.create(
@@ -174,254 +165,222 @@ SeccionController seccionController =
 
   // ── Empleados (P1 de cada grupo — sin controlador de nombre fijo) ──
 
- private static void registrarEmpleados(
-    JavalinConfig cfg, EmpleadoController controller) {
+  private static void registrarEmpleados(JavalinConfig cfg, EmpleadoController controller) {
 
-  cfg.routes.get(
-      "/api/empleados",
-      ctx -> {
-        List<EmpleadoDto> lista =
-            EmpleadoDto.listaDesde(controller.listar());
-        ctx.json(lista);
-      });
+    cfg.routes.get(
+        "/api/empleados",
+        ctx -> {
+          List<EmpleadoDto> lista = EmpleadoDto.listaDesde(controller.listar());
+          ctx.json(lista);
+        });
 
-  cfg.routes.post(
-      "/api/empleados",
-      ctx -> {
-        EmpleadoRequest r = ctx.bodyAsClass(EmpleadoRequest.class);
+    cfg.routes.post(
+        "/api/empleados",
+        ctx -> {
+          EmpleadoRequest r = ctx.bodyAsClass(EmpleadoRequest.class);
 
-        Empleado creado =
-            controller.registrar(
-                r.nombre(),
-                r.apellidos(),
-                r.email(),
-                r.salario(),
-                java.time.LocalDate.parse(r.fechaIngreso()),
-                r.tipo());
+          Empleado creado =
+              controller.registrar(
+                  r.nombre(),
+                  r.apellidos(),
+                  r.email(),
+                  r.salario(),
+                  java.time.LocalDate.parse(r.fechaIngreso()),
+                  r.tipo());
 
-        ctx.status(201).json(EmpleadoDto.desde(creado));
-      });
+          ctx.status(201).json(EmpleadoDto.desde(creado));
+        });
 
-  cfg.routes.put(
-      "/api/empleados/{id}",
-      ctx -> {
-        int id = Integer.parseInt(ctx.pathParam("id"));
-        EmpleadoRequest r = ctx.bodyAsClass(EmpleadoRequest.class);
+    cfg.routes.put(
+        "/api/empleados/{id}",
+        ctx -> {
+          int id = Integer.parseInt(ctx.pathParam("id"));
+          EmpleadoRequest r = ctx.bodyAsClass(EmpleadoRequest.class);
 
-        Empleado actualizado =
-            controller.actualizar(
-                id,
-                r.nombre(),
-                r.apellidos(),
-                r.email(),
-                r.salario(),
-                java.time.LocalDate.parse(r.fechaIngreso()),
-                r.tipo());
+          Empleado actualizado =
+              controller.actualizar(
+                  id,
+                  r.nombre(),
+                  r.apellidos(),
+                  r.email(),
+                  r.salario(),
+                  java.time.LocalDate.parse(r.fechaIngreso()),
+                  r.tipo());
 
-        ctx.json(EmpleadoDto.desde(actualizado));
-      });
+          ctx.json(EmpleadoDto.desde(actualizado));
+        });
 
-  cfg.routes.delete(
-      "/api/empleados/{id}",
-      ctx -> {
-        controller.eliminar(Integer.parseInt(ctx.pathParam("id")));
-        ctx.status(204);
-      });
-}
+    cfg.routes.delete(
+        "/api/empleados/{id}",
+        ctx -> {
+          controller.eliminar(Integer.parseInt(ctx.pathParam("id")));
+          ctx.status(204);
+        });
+  }
 
   // ── Edificios / Aulas (P1 de cada grupo — sin controlador de nombre fijo) ──
 
-  private static void registrarEdificios(
-    JavalinConfig cfg,
-    EdificioController edificioController) {
+  private static void registrarEdificios(JavalinConfig cfg, EdificioController edificioController) {
 
-  cfg.routes.get(
-      "/api/edificios",
-      ctx -> {
-        List<Edificio> edificios = edificioController.listar();
-        ctx.json(Dtos.EdificioDto.listaDesde(edificios));
-      });
-  
-cfg.routes.post(
-    "/api/edificios",
-    ctx -> {
-      Map<String, String> body = ctx.bodyAsClass(Map.class);
+    cfg.routes.get(
+        "/api/edificios",
+        ctx -> {
+          List<Edificio> edificios = edificioController.listar();
+          ctx.json(Dtos.EdificioDto.listaDesde(edificios));
+        });
 
-      String codigo = body.get("codigo");
-      String nombre = body.get("nombre");
+    cfg.routes.post(
+        "/api/edificios",
+        ctx -> {
+          Map<String, String> body = ctx.bodyAsClass(Map.class);
 
-      Edificio creado =
-          edificioController.registrar(codigo, nombre);
+          String codigo = body.get("codigo");
+          String nombre = body.get("nombre");
 
-      ctx.status(201).json(creado);
-    });
+          Edificio creado = edificioController.registrar(codigo, nombre);
 
-   cfg.routes.put(
-    "/api/edificios/{id}",
-    ctx -> {
-      int id = Integer.parseInt(ctx.pathParam("id"));
+          ctx.status(201).json(creado);
+        });
 
-      Map<String, String> body = ctx.bodyAsClass(Map.class);
-
-      String codigo = body.get("codigo");
-      String nombre = body.get("nombre");
-
-      Edificio actualizado =
-          edificioController.actualizar(id, codigo, nombre);
-
-      ctx.json(actualizado);
-    });
-   
-
-    cfg.routes.delete(
-    "/api/edificios/{id}",
-    ctx -> {
-      int id = Integer.parseInt(ctx.pathParam("id"));
-
-      edificioController.eliminar(id);
-
-      ctx.status(204);
-    });
-
-   
-      cfg.routes.post(
-    "/api/edificios/{id}/aulas",
-    ctx -> {
-      int edificioId = Integer.parseInt(ctx.pathParam("id"));
-
-      Map<String, Object> body = ctx.bodyAsClass(Map.class);
-
-      String numero = (String) body.get("numero");
-      int capacidad = ((Number) body.get("capacidad")).intValue();
-      TipoAula tipo =
-          TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
-
-      Aula aula =
-          edificioController.agregarAula(
-              edificioId, numero, capacidad, tipo);
-
-      ctx.status(201).json(aula);
-    });
-    
     cfg.routes.put(
-    "/api/edificios/{id}/aulas/{aulaId}",
-    ctx -> {
-      int edificioId = Integer.parseInt(ctx.pathParam("id"));
-      int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+        "/api/edificios/{id}",
+        ctx -> {
+          int id = Integer.parseInt(ctx.pathParam("id"));
 
-      Map<String, Object> body = ctx.bodyAsClass(Map.class);
+          Map<String, String> body = ctx.bodyAsClass(Map.class);
 
-      String numero = (String) body.get("numero");
-      int capacidad = ((Number) body.get("capacidad")).intValue();
-      TipoAula tipo =
-          TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
+          String codigo = body.get("codigo");
+          String nombre = body.get("nombre");
 
-      Aula aula =
-          edificioController.actualizarAula(
-              edificioId, aulaId, numero, capacidad, tipo);
+          Edificio actualizado = edificioController.actualizar(id, codigo, nombre);
 
-      ctx.json(aula);
-    });
+          ctx.json(actualizado);
+        });
 
     cfg.routes.delete(
-    "/api/edificios/{id}/aulas/{aulaId}",
-    ctx -> {
-      int edificioId = Integer.parseInt(ctx.pathParam("id"));
-      int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+        "/api/edificios/{id}",
+        ctx -> {
+          int id = Integer.parseInt(ctx.pathParam("id"));
 
-      edificioController.eliminarAula(edificioId, aulaId);
+          edificioController.eliminar(id);
 
-      ctx.status(204);
-    });
+          ctx.status(204);
+        });
+
+    cfg.routes.post(
+        "/api/edificios/{id}/aulas",
+        ctx -> {
+          int edificioId = Integer.parseInt(ctx.pathParam("id"));
+
+          Map<String, Object> body = ctx.bodyAsClass(Map.class);
+
+          String numero = (String) body.get("numero");
+          int capacidad = ((Number) body.get("capacidad")).intValue();
+          TipoAula tipo = TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
+
+          Aula aula = edificioController.agregarAula(edificioId, numero, capacidad, tipo);
+
+          ctx.status(201).json(aula);
+        });
+
+    cfg.routes.put(
+        "/api/edificios/{id}/aulas/{aulaId}",
+        ctx -> {
+          int edificioId = Integer.parseInt(ctx.pathParam("id"));
+          int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+
+          Map<String, Object> body = ctx.bodyAsClass(Map.class);
+
+          String numero = (String) body.get("numero");
+          int capacidad = ((Number) body.get("capacidad")).intValue();
+          TipoAula tipo = TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
+
+          Aula aula =
+              edificioController.actualizarAula(edificioId, aulaId, numero, capacidad, tipo);
+
+          ctx.json(aula);
+        });
+
+    cfg.routes.delete(
+        "/api/edificios/{id}/aulas/{aulaId}",
+        ctx -> {
+          int edificioId = Integer.parseInt(ctx.pathParam("id"));
+          int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+
+          edificioController.eliminarAula(edificioId, aulaId);
+
+          ctx.status(204);
+        });
   }
 
   // ── Secciones (P1 de cada grupo — sin controlador de nombre fijo) ──
 
   private static void registrarSecciones(JavalinConfig cfg, SeccionController seccionController) {
-   cfg.routes.get(
-    "/api/secciones",
-    ctx -> {
-      List<Seccion> secciones = seccionController.listar();
-      ctx.json(Dtos.SeccionDto.listaDesde(secciones));
-    });
-   
-   cfg.routes.post(
-    "/api/secciones",
-    ctx -> {
-      Dtos.SeccionRequest r =
-          ctx.bodyAsClass(Dtos.SeccionRequest.class);
+    cfg.routes.get(
+        "/api/secciones",
+        ctx -> {
+          List<Seccion> secciones = seccionController.listar();
+          ctx.json(Dtos.SeccionDto.listaDesde(secciones));
+        });
 
-      Seccion creada =
-          seccionController.registrar(
-              r.codigo(),
-              r.nombre(),
-              r.aulaId(),
-              r.docenteId());
+    cfg.routes.post(
+        "/api/secciones",
+        ctx -> {
+          Dtos.SeccionRequest r = ctx.bodyAsClass(Dtos.SeccionRequest.class);
 
-      ctx.status(201).json(Dtos.SeccionDto.desde(creada));
-    });
+          Seccion creada =
+              seccionController.registrar(r.codigo(), r.nombre(), r.aulaId(), r.docenteId());
 
-   cfg.routes.post(
-    "/api/secciones/{id}/estudiantes",
-    ctx -> {
-      int seccionId = Integer.parseInt(ctx.pathParam("id"));
+          ctx.status(201).json(Dtos.SeccionDto.desde(creada));
+        });
 
-      Dtos.InscripcionRequest r =
-          ctx.bodyAsClass(Dtos.InscripcionRequest.class);
+    cfg.routes.post(
+        "/api/secciones/{id}/estudiantes",
+        ctx -> {
+          int seccionId = Integer.parseInt(ctx.pathParam("id"));
 
-      Seccion actualizada =
-          seccionController.agregarEstudiante(
-              seccionId,
-              r.estudianteId());
+          Dtos.InscripcionRequest r = ctx.bodyAsClass(Dtos.InscripcionRequest.class);
 
-      ctx.json(Dtos.SeccionDto.desde(actualizada));
-    });
+          Seccion actualizada = seccionController.agregarEstudiante(seccionId, r.estudianteId());
 
- cfg.routes.put(
-    "/api/secciones/{id}",
-    ctx -> {
-      int id = Integer.parseInt(ctx.pathParam("id"));
+          ctx.json(Dtos.SeccionDto.desde(actualizada));
+        });
 
-      Dtos.SeccionRequest r =
-          ctx.bodyAsClass(Dtos.SeccionRequest.class);
+    cfg.routes.put(
+        "/api/secciones/{id}",
+        ctx -> {
+          int id = Integer.parseInt(ctx.pathParam("id"));
 
-      Seccion actualizada =
-          seccionController.actualizar(
-              id,
-              r.codigo(),
-              r.nombre(),
-              r.aulaId(),
-              r.docenteId());
+          Dtos.SeccionRequest r = ctx.bodyAsClass(Dtos.SeccionRequest.class);
 
-      ctx.json(Dtos.SeccionDto.desde(actualizada));
-    });
+          Seccion actualizada =
+              seccionController.actualizar(id, r.codigo(), r.nombre(), r.aulaId(), r.docenteId());
 
-cfg.routes.delete(
-    "/api/secciones/{id}",
-    ctx -> {
-      int id = Integer.parseInt(ctx.pathParam("id"));
+          ctx.json(Dtos.SeccionDto.desde(actualizada));
+        });
 
-      seccionController.eliminar(id);
+    cfg.routes.delete(
+        "/api/secciones/{id}",
+        ctx -> {
+          int id = Integer.parseInt(ctx.pathParam("id"));
 
-      ctx.status(204);
-    });
+          seccionController.eliminar(id);
 
-   cfg.routes.delete(
-    "/api/secciones/{id}/estudiantes/{estudianteId}",
-    ctx -> {
-      int seccionId =
-          Integer.parseInt(ctx.pathParam("id"));
+          ctx.status(204);
+        });
 
-      int estudianteId =
-          Integer.parseInt(ctx.pathParam("estudianteId"));
+    cfg.routes.delete(
+        "/api/secciones/{id}/estudiantes/{estudianteId}",
+        ctx -> {
+          int seccionId = Integer.parseInt(ctx.pathParam("id"));
 
-      seccionController.removerEstudiante(
-          seccionId,
-          estudianteId);
+          int estudianteId = Integer.parseInt(ctx.pathParam("estudianteId"));
 
-      ctx.status(204);
-    });
-}
+          seccionController.removerEstudiante(seccionId, estudianteId);
+
+          ctx.status(204);
+        });
+  }
 
   // ── Matrícula (puente HTTP→socket) ──
 

@@ -1,5 +1,6 @@
 package edu.uam.educore.socket;
 
+import edu.uam.educore.db.Conexion;
 import edu.uam.educore.db.ConfiguracionBD;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,13 +9,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import edu.uam.educore.db.Conexion;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+
 /**
  * Servidor de Matrícula. Recibe por socket la orden MATRICULAR &lt;archivo&gt;, lee ese CSV del
  * directorio de entrada (una matrícula por renglón: carnet,codigoSeccion) y matricula todo el lote
@@ -87,148 +88,133 @@ public class ServidorMatricula {
    * </ol>
    *
    * <p>Cómo distinguir los cuatro casos de error (carnet inexistente, sección inexistente, cupo
-   * lleno, matrícula duplicada) queda a su criterio de diseño — no hay una jerarquía de
-   * excepciones provista. Ver "Puntos extra" en el enunciado si quieren diseñar la suya.
+   * lleno, matrícula duplicada) queda a su criterio de diseño — no hay una jerarquía de excepciones
+   * provista. Ver "Puntos extra" en el enunciado si quieren diseñar la suya.
    *
    * <p>Referencia del patrón JDBC: EstudianteRepoSql.
    */
- private int procesarLote(String archivo) throws Exception {
-  Path ruta = entradaDir.resolve(archivo);
+  private int procesarLote(String archivo) throws Exception {
+    Path ruta = entradaDir.resolve(archivo);
 
-  if (!Files.exists(ruta)) {
-    throw new IllegalArgumentException(
-        "No existe el archivo: " + archivo);
-  }
+    if (!Files.exists(ruta)) {
+      throw new IllegalArgumentException("No existe el archivo: " + archivo);
+    }
 
-  List<String> lineas = Files.readAllLines(ruta, StandardCharsets.UTF_8);
+    List<String> lineas = Files.readAllLines(ruta, StandardCharsets.UTF_8);
 
-  try (Connection con =
-      Conexion.getConnection(
-          config.url(),
-          config.usuario(),
-          config.contrasena())) {
+    try (Connection con =
+        Conexion.getConnection(config.url(), config.usuario(), config.contrasena())) {
 
-    con.setAutoCommit(false);
+      con.setAutoCommit(false);
 
-    try {
-      int matriculados = 0;
+      try {
+        int matriculados = 0;
 
-      for (String linea : lineas) {
-        if (linea == null || linea.trim().isEmpty()) {
-          continue;
-        }
-
-        String[] partes = linea.split(",");
-
-        if (partes.length != 2) {
-          throw new IllegalArgumentException(
-              "Formato inválido: " + linea);
-        }
-
-        String carnet = partes[0].trim();
-        String codigoSeccion = partes[1].trim();
-
-        int estudianteId;
-
-        try (PreparedStatement ps =
-            con.prepareStatement(
-                "SELECT id FROM estudiante WHERE carnet=?")) {
-
-          ps.setString(1, carnet);
-
-          try (ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
-              throw new IllegalArgumentException(
-                  "No existe estudiante con carnet " + carnet);
-            }
-
-            estudianteId = rs.getInt("id");
+        for (String linea : lineas) {
+          if (linea == null || linea.trim().isEmpty()) {
+            continue;
           }
-        }
 
-        int seccionId;
-        int capacidad;
+          String[] partes = linea.split(",");
 
-        String sqlSeccion =
-            "SELECT s.id, a.capacidad "
-                + "FROM seccion s "
-                + "JOIN aula a ON s.aula_id = a.id "
-                + "WHERE s.codigo=?";
-
-        try (PreparedStatement ps = con.prepareStatement(sqlSeccion)) {
-          ps.setString(1, codigoSeccion);
-
-          try (ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
-              throw new IllegalArgumentException(
-                  "No existe sección con código " + codigoSeccion);
-            }
-
-            seccionId = rs.getInt("id");
-            capacidad = rs.getInt("capacidad");
+          if (partes.length != 2) {
+            throw new IllegalArgumentException("Formato inválido: " + linea);
           }
-        }
 
-        try (PreparedStatement ps =
-            con.prepareStatement(
-                "SELECT COUNT(*) FROM matricula "
-                    + "WHERE seccion_id=? AND estudiante_id=?")) {
+          String carnet = partes[0].trim();
+          String codigoSeccion = partes[1].trim();
 
-          ps.setInt(1, seccionId);
-          ps.setInt(2, estudianteId);
+          int estudianteId;
 
-          try (ResultSet rs = ps.executeQuery()) {
-            rs.next();
+          try (PreparedStatement ps =
+              con.prepareStatement("SELECT id FROM estudiante WHERE carnet=?")) {
 
-            if (rs.getInt(1) > 0) {
-              throw new IllegalArgumentException(
-                  "El estudiante "
-                      + carnet
-                      + " ya está matriculado en "
-                      + codigoSeccion);
+            ps.setString(1, carnet);
+
+            try (ResultSet rs = ps.executeQuery()) {
+              if (!rs.next()) {
+                throw new IllegalArgumentException("No existe estudiante con carnet " + carnet);
+              }
+
+              estudianteId = rs.getInt("id");
             }
           }
-        }
 
-        try (PreparedStatement ps =
-            con.prepareStatement(
-                "SELECT COUNT(*) FROM matricula WHERE seccion_id=?")) {
+          int seccionId;
+          int capacidad;
 
-          ps.setInt(1, seccionId);
+          String sqlSeccion =
+              "SELECT s.id, a.capacidad "
+                  + "FROM seccion s "
+                  + "JOIN aula a ON s.aula_id = a.id "
+                  + "WHERE s.codigo=?";
 
-          try (ResultSet rs = ps.executeQuery()) {
-            rs.next();
+          try (PreparedStatement ps = con.prepareStatement(sqlSeccion)) {
+            ps.setString(1, codigoSeccion);
 
-            if (rs.getInt(1) >= capacidad) {
-              throw new IllegalArgumentException(
-                  "La sección " + codigoSeccion + " está llena");
+            try (ResultSet rs = ps.executeQuery()) {
+              if (!rs.next()) {
+                throw new IllegalArgumentException("No existe sección con código " + codigoSeccion);
+              }
+
+              seccionId = rs.getInt("id");
+              capacidad = rs.getInt("capacidad");
             }
           }
+
+          try (PreparedStatement ps =
+              con.prepareStatement(
+                  "SELECT COUNT(*) FROM matricula " + "WHERE seccion_id=? AND estudiante_id=?")) {
+
+            ps.setInt(1, seccionId);
+            ps.setInt(2, estudianteId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+              rs.next();
+
+              if (rs.getInt(1) > 0) {
+                throw new IllegalArgumentException(
+                    "El estudiante " + carnet + " ya está matriculado en " + codigoSeccion);
+              }
+            }
+          }
+
+          try (PreparedStatement ps =
+              con.prepareStatement("SELECT COUNT(*) FROM matricula WHERE seccion_id=?")) {
+
+            ps.setInt(1, seccionId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+              rs.next();
+
+              if (rs.getInt(1) >= capacidad) {
+                throw new IllegalArgumentException("La sección " + codigoSeccion + " está llena");
+              }
+            }
+          }
+
+          try (PreparedStatement ps =
+              con.prepareStatement(
+                  "INSERT INTO matricula " + "(seccion_id, estudiante_id) VALUES (?, ?)")) {
+
+            ps.setInt(1, seccionId);
+            ps.setInt(2, estudianteId);
+            ps.executeUpdate();
+          }
+
+          matriculados++;
         }
 
-        try (PreparedStatement ps =
-            con.prepareStatement(
-                "INSERT INTO matricula "
-                    + "(seccion_id, estudiante_id) VALUES (?, ?)")) {
+        con.commit();
+        return matriculados;
 
-          ps.setInt(1, seccionId);
-          ps.setInt(2, estudianteId);
-          ps.executeUpdate();
-        }
+      } catch (Exception e) {
+        con.rollback();
+        throw e;
 
-        matriculados++;
+      } finally {
+        con.setAutoCommit(true);
       }
-
-      con.commit();
-      return matriculados;
-
-    } catch (Exception e) {
-      con.rollback();
-      throw e;
-
-    } finally {
-      con.setAutoCommit(true);
     }
   }
- }
 }

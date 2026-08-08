@@ -22,35 +22,32 @@ public class EdificioRepoSql extends Repositorio<Edificio> {
   }
 
   private Connection abrir() throws Exception {
-    return Conexion.getConnection(
-        config.url(), config.usuario(), config.contrasena());
+    return Conexion.getConnection(config.url(), config.usuario(), config.contrasena());
   }
 
- @Override
-public void guardar(Edificio edificio) throws Exception {
-  String sql = "INSERT INTO edificio (codigo, nombre) VALUES (?, ?)";
+  @Override
+  public void guardar(Edificio edificio) throws Exception {
+    String sql = "INSERT INTO edificio (codigo, nombre) VALUES (?, ?)";
 
-  try (Connection con = abrir();
-      PreparedStatement ps =
-          con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (Connection con = abrir();
+        PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-    ps.setString(1, edificio.getCodigo());
-    ps.setString(2, edificio.getNombre());
+      ps.setString(1, edificio.getCodigo());
+      ps.setString(2, edificio.getNombre());
 
-    ps.executeUpdate();
+      ps.executeUpdate();
 
-    try (ResultSet claves = ps.getGeneratedKeys()) {
-      if (claves.next()) {
-        edificio.setId(claves.getInt(1));
+      try (ResultSet claves = ps.getGeneratedKeys()) {
+        if (claves.next()) {
+          edificio.setId(claves.getInt(1));
+        }
       }
     }
   }
-}
 
   @Override
   public void actualizar(Edificio edificio) throws Exception {
-    String sql =
-        "UPDATE edificio SET codigo=?, nombre=? WHERE id=?";
+    String sql = "UPDATE edificio SET codigo=?, nombre=? WHERE id=?";
 
     try (Connection con = abrir();
         PreparedStatement ps = con.prepareStatement(sql)) {
@@ -77,8 +74,7 @@ public void guardar(Edificio edificio) throws Exception {
 
   @Override
   public Optional<Edificio> buscarPorId(int id) throws Exception {
-    String sql =
-        "SELECT id, codigo, nombre FROM edificio WHERE id=?";
+    String sql = "SELECT id, codigo, nombre FROM edificio WHERE id=?";
 
     try (Connection con = abrir();
         PreparedStatement ps = con.prepareStatement(sql)) {
@@ -101,8 +97,7 @@ public void guardar(Edificio edificio) throws Exception {
   public List<Edificio> buscarTodos() throws Exception {
     List<Edificio> edificios = new ArrayList<>();
 
-    String sql =
-        "SELECT id, codigo, nombre FROM edificio ORDER BY id";
+    String sql = "SELECT id, codigo, nombre FROM edificio ORDER BY id";
 
     try (Connection con = abrir();
         PreparedStatement ps = con.prepareStatement(sql);
@@ -119,18 +114,13 @@ public void guardar(Edificio edificio) throws Exception {
   }
 
   private Edificio mapearEdificio(ResultSet rs) throws Exception {
-    return new Edificio(
-        rs.getInt("id"),
-        rs.getString("codigo"),
-        rs.getString("nombre"));
+    return new Edificio(rs.getInt("id"), rs.getString("codigo"), rs.getString("nombre"));
   }
 
-  private void cargarAulas(Connection con, Edificio edificio)
-      throws Exception {
+  private void cargarAulas(Connection con, Edificio edificio) throws Exception {
 
     String sql =
-        "SELECT id, numero, capacidad, tipo "
-            + "FROM aula WHERE edificio_id=? ORDER BY id";
+        "SELECT id, numero, capacidad, tipo " + "FROM aula WHERE edificio_id=? ORDER BY id";
 
     try (PreparedStatement ps = con.prepareStatement(sql)) {
       ps.setInt(1, edificio.getId());
@@ -150,60 +140,54 @@ public void guardar(Edificio edificio) throws Exception {
       }
     }
   }
+
   public void guardarAula(Aula aula) throws Exception {
-  String sql =
-      "INSERT INTO aula (numero, capacidad, tipo, edificio_id) "
-          + "VALUES (?, ?, ?, ?)";
+    String sql = "INSERT INTO aula (numero, capacidad, tipo, edificio_id) " + "VALUES (?, ?, ?, ?)";
 
-  try (Connection con = abrir();
-      PreparedStatement ps =
-          con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (Connection con = abrir();
+        PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-    ps.setString(1, aula.getNumero());
-    ps.setInt(2, aula.getCapacidad());
-    ps.setString(3, aula.getTipo().name());
-    ps.setInt(4, aula.getEdificio().getId());
+      ps.setString(1, aula.getNumero());
+      ps.setInt(2, aula.getCapacidad());
+      ps.setString(3, aula.getTipo().name());
+      ps.setInt(4, aula.getEdificio().getId());
 
-    ps.executeUpdate();
+      ps.executeUpdate();
 
-    try (ResultSet claves = ps.getGeneratedKeys()) {
-      if (claves.next()) {
-        aula.setId(claves.getInt(1));
+      try (ResultSet claves = ps.getGeneratedKeys()) {
+        if (claves.next()) {
+          aula.setId(claves.getInt(1));
+        }
       }
     }
   }
-}
 
-public void actualizarAula(Aula aula) throws Exception {
-  String sql =
-      "UPDATE aula SET numero=?, capacidad=?, tipo=? "
-          + "WHERE id=? AND edificio_id=?";
+  public void actualizarAula(Aula aula) throws Exception {
+    String sql = "UPDATE aula SET numero=?, capacidad=?, tipo=? " + "WHERE id=? AND edificio_id=?";
 
-  try (Connection con = abrir();
-      PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = abrir();
+        PreparedStatement ps = con.prepareStatement(sql)) {
 
-    ps.setString(1, aula.getNumero());
-    ps.setInt(2, aula.getCapacidad());
-    ps.setString(3, aula.getTipo().name());
-    ps.setInt(4, aula.getId());
-    ps.setInt(5, aula.getEdificio().getId());
+      ps.setString(1, aula.getNumero());
+      ps.setInt(2, aula.getCapacidad());
+      ps.setString(3, aula.getTipo().name());
+      ps.setInt(4, aula.getId());
+      ps.setInt(5, aula.getEdificio().getId());
 
-    ps.executeUpdate();
+      ps.executeUpdate();
+    }
   }
-}
 
-public void eliminarAula(int edificioId, int aulaId) throws Exception {
-  String sql =
-      "DELETE FROM aula WHERE id=? AND edificio_id=?";
+  public void eliminarAula(int edificioId, int aulaId) throws Exception {
+    String sql = "DELETE FROM aula WHERE id=? AND edificio_id=?";
 
-  try (Connection con = abrir();
-      PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = abrir();
+        PreparedStatement ps = con.prepareStatement(sql)) {
 
-    ps.setInt(1, aulaId);
-    ps.setInt(2, edificioId);
+      ps.setInt(1, aulaId);
+      ps.setInt(2, edificioId);
 
-    ps.executeUpdate();
+      ps.executeUpdate();
+    }
   }
-}
- 
 }

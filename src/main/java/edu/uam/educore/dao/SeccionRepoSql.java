@@ -1,8 +1,5 @@
 package edu.uam.educore.dao;
 
-import edu.uam.educore.model.personas.Estudiante;
-import edu.uam.educore.model.personas.EstudianteBecado;
-import edu.uam.educore.model.personas.EstudianteRegular;
 import edu.uam.educore.db.Conexion;
 import edu.uam.educore.db.ConfiguracionBD;
 import edu.uam.educore.enums.TipoEmpleado;
@@ -11,6 +8,9 @@ import edu.uam.educore.model.infraestructura.Aula;
 import edu.uam.educore.model.infraestructura.Edificio;
 import edu.uam.educore.model.infraestructura.TipoAula;
 import edu.uam.educore.model.personas.Empleado;
+import edu.uam.educore.model.personas.Estudiante;
+import edu.uam.educore.model.personas.EstudianteBecado;
+import edu.uam.educore.model.personas.EstudianteRegular;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,19 +28,16 @@ public class SeccionRepoSql extends Repositorio<Seccion> {
   }
 
   private Connection abrir() throws Exception {
-    return Conexion.getConnection(
-        config.url(), config.usuario(), config.contrasena());
+    return Conexion.getConnection(config.url(), config.usuario(), config.contrasena());
   }
 
   @Override
   public void guardar(Seccion seccion) throws Exception {
     String sql =
-        "INSERT INTO seccion (codigo, nombre, docente_id, aula_id) "
-            + "VALUES (?, ?, ?, ?)";
+        "INSERT INTO seccion (codigo, nombre, docente_id, aula_id) " + "VALUES (?, ?, ?, ?)";
 
     try (Connection con = abrir();
-        PreparedStatement ps =
-            con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
       ps.setString(1, seccion.getCodigo());
       ps.setString(2, seccion.getNombre());
@@ -58,68 +55,64 @@ public class SeccionRepoSql extends Repositorio<Seccion> {
   }
 
   @Override
-public void actualizar(Seccion seccion) throws Exception {
-  String sql =
-      "UPDATE seccion SET codigo=?, nombre=?, docente_id=?, aula_id=? "
-          + "WHERE id=?";
+  public void actualizar(Seccion seccion) throws Exception {
+    String sql = "UPDATE seccion SET codigo=?, nombre=?, docente_id=?, aula_id=? " + "WHERE id=?";
 
-  try (Connection con = abrir()) {
-    con.setAutoCommit(false);
+    try (Connection con = abrir()) {
+      con.setAutoCommit(false);
 
-    try {
-      try (PreparedStatement ps = con.prepareStatement(sql)) {
-        ps.setString(1, seccion.getCodigo());
-        ps.setString(2, seccion.getNombre());
-        ps.setInt(3, seccion.getDocente().getId());
-        ps.setInt(4, seccion.getAula().getId());
-        ps.setInt(5, seccion.getId());
+      try {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+          ps.setString(1, seccion.getCodigo());
+          ps.setString(2, seccion.getNombre());
+          ps.setInt(3, seccion.getDocente().getId());
+          ps.setInt(4, seccion.getAula().getId());
+          ps.setInt(5, seccion.getId());
 
-        ps.executeUpdate();
-      }
-
-      try (PreparedStatement ps =
-          con.prepareStatement("DELETE FROM matricula WHERE seccion_id=?")) {
-        ps.setInt(1, seccion.getId());
-        ps.executeUpdate();
-      }
-
-      String sqlMatricula =
-          "INSERT INTO matricula (seccion_id, estudiante_id) VALUES (?, ?)";
-
-      try (PreparedStatement ps = con.prepareStatement(sqlMatricula)) {
-        for (Estudiante estudiante : seccion.listarEstudiantes()) {
-          ps.setInt(1, seccion.getId());
-          ps.setInt(2, estudiante.getId());
-          ps.addBatch();
+          ps.executeUpdate();
         }
 
-        ps.executeBatch();
+        try (PreparedStatement ps =
+            con.prepareStatement("DELETE FROM matricula WHERE seccion_id=?")) {
+          ps.setInt(1, seccion.getId());
+          ps.executeUpdate();
+        }
+
+        String sqlMatricula = "INSERT INTO matricula (seccion_id, estudiante_id) VALUES (?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sqlMatricula)) {
+          for (Estudiante estudiante : seccion.listarEstudiantes()) {
+            ps.setInt(1, seccion.getId());
+            ps.setInt(2, estudiante.getId());
+            ps.addBatch();
+          }
+
+          ps.executeBatch();
+        }
+
+        con.commit();
+
+      } catch (Exception e) {
+        con.rollback();
+        throw e;
+
+      } finally {
+        con.setAutoCommit(true);
       }
-
-      con.commit();
-
-    } catch (Exception e) {
-      con.rollback();
-      throw e;
-
-    } finally {
-      con.setAutoCommit(true);
     }
   }
-}
 
-@Override
-public void eliminar(int id) throws Exception {
-  String sql = "DELETE FROM seccion WHERE id=?";
+  @Override
+  public void eliminar(int id) throws Exception {
+    String sql = "DELETE FROM seccion WHERE id=?";
 
-  try (Connection con = abrir();
-      PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = abrir();
+        PreparedStatement ps = con.prepareStatement(sql)) {
 
-    ps.setInt(1, id);
-    ps.executeUpdate();
+      ps.setInt(1, id);
+      ps.executeUpdate();
+    }
   }
-}
-
 
   @Override
   public Optional<Seccion> buscarPorId(int id) throws Exception {
@@ -143,11 +136,11 @@ public void eliminar(int id) throws Exception {
       ps.setInt(1, id);
 
       try (ResultSet rs = ps.executeQuery()) {
-       if (rs.next()) {
-           Seccion seccion = mapear(rs);
-           cargarEstudiantes(con, seccion);
-  return Optional.of(seccion);
-         }
+        if (rs.next()) {
+          Seccion seccion = mapear(rs);
+          cargarEstudiantes(con, seccion);
+          return Optional.of(seccion);
+        }
       }
     }
 
@@ -177,9 +170,9 @@ public void eliminar(int id) throws Exception {
         ResultSet rs = ps.executeQuery()) {
 
       while (rs.next()) {
-  Seccion seccion = mapear(rs);
-  cargarEstudiantes(con, seccion);
-  secciones.add(seccion);
+        Seccion seccion = mapear(rs);
+        cargarEstudiantes(con, seccion);
+        secciones.add(seccion);
       }
     }
 
@@ -215,53 +208,49 @@ public void eliminar(int id) throws Exception {
             TipoEmpleado.valueOf(rs.getString("docente_tipo")));
 
     return new Seccion(
-        rs.getInt("id"),
-        rs.getString("codigo"),
-        rs.getString("nombre"),
-        docente,
-        aula);
+        rs.getInt("id"), rs.getString("codigo"), rs.getString("nombre"), docente, aula);
   }
-  private void cargarEstudiantes(Connection con, Seccion seccion)
-    throws Exception {
 
-  String sql =
-      "SELECT e.id, e.tipo, e.nombre, e.apellidos, e.email, "
-          + "e.carnet, e.porcentaje_beca "
-          + "FROM estudiante e "
-          + "JOIN matricula m ON m.estudiante_id = e.id "
-          + "WHERE m.seccion_id=? "
-          + "ORDER BY e.id";
+  private void cargarEstudiantes(Connection con, Seccion seccion) throws Exception {
 
-  try (PreparedStatement ps = con.prepareStatement(sql)) {
-    ps.setInt(1, seccion.getId());
+    String sql =
+        "SELECT e.id, e.tipo, e.nombre, e.apellidos, e.email, "
+            + "e.carnet, e.porcentaje_beca "
+            + "FROM estudiante e "
+            + "JOIN matricula m ON m.estudiante_id = e.id "
+            + "WHERE m.seccion_id=? "
+            + "ORDER BY e.id";
 
-    try (ResultSet rs = ps.executeQuery()) {
-      while (rs.next()) {
+    try (PreparedStatement ps = con.prepareStatement(sql)) {
+      ps.setInt(1, seccion.getId());
 
-        Estudiante estudiante;
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
 
-        if ("BECADO".equals(rs.getString("tipo"))) {
-          estudiante =
-              new EstudianteBecado(
-                  rs.getInt("id"),
-                  rs.getString("nombre"),
-                  rs.getString("apellidos"),
-                  rs.getString("email"),
-                  rs.getString("carnet"),
-                  rs.getDouble("porcentaje_beca"));
-        } else {
-          estudiante =
-              new EstudianteRegular(
-                  rs.getInt("id"),
-                  rs.getString("nombre"),
-                  rs.getString("apellidos"),
-                  rs.getString("email"),
-                  rs.getString("carnet"));
+          Estudiante estudiante;
+
+          if ("BECADO".equals(rs.getString("tipo"))) {
+            estudiante =
+                new EstudianteBecado(
+                    rs.getInt("id"),
+                    rs.getString("nombre"),
+                    rs.getString("apellidos"),
+                    rs.getString("email"),
+                    rs.getString("carnet"),
+                    rs.getDouble("porcentaje_beca"));
+          } else {
+            estudiante =
+                new EstudianteRegular(
+                    rs.getInt("id"),
+                    rs.getString("nombre"),
+                    rs.getString("apellidos"),
+                    rs.getString("email"),
+                    rs.getString("carnet"));
+          }
+
+          seccion.agregarEstudiante(estudiante);
         }
-
-        seccion.agregarEstudiante(estudiante);
       }
     }
   }
- }
 }

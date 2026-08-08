@@ -4,16 +4,16 @@ package edu.uam.educore.api;
 // Empleado, Edificio, Aula, Seccion, TipoEmpleado y TipoAula (mismo paquete/nombre del
 // enunciado de P1). Van junto con los bloques comentados más abajo. java.util.List/ArrayList
 // hacen falta en cuanto descomenten cualquiera de los 3 bloques (los usan los listaDesde).
- import java.util.ArrayList;
- import java.util.List;
- import edu.uam.educore.model.infraestructura.TipoAula;
- import edu.uam.educore.enums.TipoEmpleado;
- import edu.uam.educore.model.academico.Seccion;
+import edu.uam.educore.enums.TipoEmpleado;
+import edu.uam.educore.model.academico.Seccion;
 import edu.uam.educore.model.infraestructura.Aula;
- import edu.uam.educore.model.infraestructura.Edificio;
- import edu.uam.educore.model.personas.Empleado;
+import edu.uam.educore.model.infraestructura.Edificio;
+import edu.uam.educore.model.infraestructura.TipoAula;
+import edu.uam.educore.model.personas.Empleado;
 import edu.uam.educore.model.personas.Estudiante;
 import edu.uam.educore.model.personas.EstudianteBecado;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Un DTO (Data Transfer Object) es un record de solo datos que traduce una entidad de dominio
@@ -24,7 +24,6 @@ import edu.uam.educore.model.personas.EstudianteBecado;
  */
 public final class Dtos {
   private Dtos() {}
-
 
   public record EstudianteRequest(
       String tipo,
@@ -62,139 +61,125 @@ public final class Dtos {
   // TipoEmpleado arriba) cuando ya tengan su propia clase Empleado. La forma de EmpleadoDto/
   // EmpleadoRequest es el contrato fijo con el frontend — no la cambien.
   //
-   public record EmpleadoRequest(
+  public record EmpleadoRequest(
       String nombre,
-       String apellidos,
-       String email,
-       double salario,
-       String fechaIngreso,
-       TipoEmpleado tipo) {}
-  
-   public record EmpleadoDto(
+      String apellidos,
+      String email,
+      double salario,
+      String fechaIngreso,
+      TipoEmpleado tipo) {}
+
+  public record EmpleadoDto(
       int id,
-       String tipo,
-       String nombre,
-       String apellidos,
-       String email,
-       double salario,
-       String fechaIngreso) {
-     public static EmpleadoDto desde(Empleado e) {
-     return new EmpleadoDto(
-           e.getId(),
-           e.getTipoEmpleado().name(),
-           e.getNombre(),
-           e.getApellidos(),
-           e.getEmail(),
-           e.getSalario(),
-           e.getFechaIngreso().toString());
-     }
-  
+      String tipo,
+      String nombre,
+      String apellidos,
+      String email,
+      double salario,
+      String fechaIngreso) {
+    public static EmpleadoDto desde(Empleado e) {
+      return new EmpleadoDto(
+          e.getId(),
+          e.getTipoEmpleado().name(),
+          e.getNombre(),
+          e.getApellidos(),
+          e.getEmail(),
+          e.getSalario(),
+          e.getFechaIngreso().toString());
+    }
+
     public static List<EmpleadoDto> listaDesde(List<Empleado> empleados) {
       List<EmpleadoDto> resultado = new ArrayList<>();
       for (Empleado e : empleados) {
         resultado.add(EmpleadoDto.desde(e));
-       }
-       return resultado;
+      }
+      return resultado;
     }
-   }
+  }
 
   // ── Edificio / Aula (P1 de cada grupo) ──
   // TODO(estudiante · P1): descomenten este bloque completo (y los imports de Edificio/Aula/
   // TipoAula arriba) cuando ya tengan sus propias clases Edificio y Aula.
-  
-public record EdificioRequest(String codigo, String nombre) {}
 
-public record AulaRequest(String numero, int capacidad, TipoAula tipo) {}
+  public record EdificioRequest(String codigo, String nombre) {}
 
-public record AulaDto(int id, String numero, int capacidad, String tipo) {
+  public record AulaRequest(String numero, int capacidad, TipoAula tipo) {}
 
-  public static AulaDto desde(Aula a) {
-    return new AulaDto(
-        a.getId(),
-        a.getNumero(),
-        a.getCapacidad(),
-        a.getTipo().name());
-  }
-}
+  public record AulaDto(int id, String numero, int capacidad, String tipo) {
 
-public record EdificioDto(
-    int id,
-    String codigo,
-    String nombre,
-    List<AulaDto> aulas) {
-
-  public static EdificioDto desde(Edificio e) {
-    return new EdificioDto(
-        e.getId(),
-        e.getCodigo(),
-        e.getNombre(),
-        e.listarAulas()
-            .stream()
-            .map(AulaDto::desde)
-            .toList());
+    public static AulaDto desde(Aula a) {
+      return new AulaDto(a.getId(), a.getNumero(), a.getCapacidad(), a.getTipo().name());
+    }
   }
 
-  public static List<EdificioDto> listaDesde(List<Edificio> edificios) {
-    List<EdificioDto> resultado = new ArrayList<>();
+  public record EdificioDto(int id, String codigo, String nombre, List<AulaDto> aulas) {
 
-    for (Edificio e : edificios) {
-      resultado.add(EdificioDto.desde(e));
+    public static EdificioDto desde(Edificio e) {
+      return new EdificioDto(
+          e.getId(),
+          e.getCodigo(),
+          e.getNombre(),
+          e.listarAulas().stream().map(AulaDto::desde).toList());
     }
 
-    return resultado;
+    public static List<EdificioDto> listaDesde(List<Edificio> edificios) {
+      List<EdificioDto> resultado = new ArrayList<>();
+
+      for (Edificio e : edificios) {
+        resultado.add(EdificioDto.desde(e));
+      }
+
+      return resultado;
+    }
   }
-}
 
   // ── Sección (P1 de cada grupo) ──
   // TODO(estudiante · P1): descomenten este bloque completo (y el import de Seccion arriba)
   // cuando ya tengan su propia clase Seccion.
   //
-   public record SeccionRequest(String codigo, String nombre, int aulaId, int docenteId) {}
-  
-   public record InscripcionRequest(int estudianteId) {}
-  
+  public record SeccionRequest(String codigo, String nombre, int aulaId, int docenteId) {}
+
+  public record InscripcionRequest(int estudianteId) {}
+
   public record EstudianteResumenDto(int id, String nombre, String carnet) {
     public static EstudianteResumenDto desde(Estudiante e) {
       return new EstudianteResumenDto(
-         e.getId(), e.getNombre() + " " + e.getApellidos(), e.getCarnet());
-     }
-   }
-  
- public record SeccionDto(
-    int id,
-    String codigo,
-    String nombre,
-    int docenteId,
-    String docenteNombre,
-    int aulaId,
-    String aulaNumero,
-    List<EstudianteResumenDto> estudiantes) {
-
-  public static SeccionDto desde(Seccion s) {
-    return new SeccionDto(
-        s.getId(),
-        s.getCodigo(),
-        s.getNombre(),
-        s.getDocente().getId(),
-        s.getDocente().getNombre() + " " + s.getDocente().getApellidos(),
-        s.getAula().getId(),
-        s.getAula().getNumero(),
-        s.listarEstudiantes()
-            .stream()
-            .map(EstudianteResumenDto::desde)
-            .toList());
+          e.getId(), e.getNombre() + " " + e.getApellidos(), e.getCarnet());
+    }
   }
 
-  public static List<SeccionDto> listaDesde(List<Seccion> secciones) {
-    List<SeccionDto> resultado = new ArrayList<>();
+  public record SeccionDto(
+      int id,
+      String codigo,
+      String nombre,
+      int docenteId,
+      String docenteNombre,
+      int aulaId,
+      String aulaNumero,
+      List<EstudianteResumenDto> estudiantes) {
 
-    for (Seccion s : secciones) {
-      resultado.add(SeccionDto.desde(s));
+    public static SeccionDto desde(Seccion s) {
+      return new SeccionDto(
+          s.getId(),
+          s.getCodigo(),
+          s.getNombre(),
+          s.getDocente().getId(),
+          s.getDocente().getNombre() + " " + s.getDocente().getApellidos(),
+          s.getAula().getId(),
+          s.getAula().getNumero(),
+          s.listarEstudiantes().stream().map(EstudianteResumenDto::desde).toList());
     }
 
-    return resultado;
+    public static List<SeccionDto> listaDesde(List<Seccion> secciones) {
+      List<SeccionDto> resultado = new ArrayList<>();
+
+      for (Seccion s : secciones) {
+        resultado.add(SeccionDto.desde(s));
+      }
+
+      return resultado;
+    }
   }
-}
 
   // ── Matrícula (puente HTTP→socket) ──
 

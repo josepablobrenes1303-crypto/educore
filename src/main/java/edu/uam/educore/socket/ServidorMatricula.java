@@ -9,7 +9,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-
+import edu.uam.educore.db.Conexion;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.List;
 /**
  * Servidor de Matrícula. Recibe por socket la orden MATRICULAR &lt;archivo&gt;, lee ese CSV del
  * directorio de entrada (una matrícula por renglón: carnet,codigoSeccion) y matricula todo el lote
@@ -87,10 +92,143 @@ public class ServidorMatricula {
    *
    * <p>Referencia del patrón JDBC: EstudianteRepoSql.
    */
-  private int procesarLote(String archivo) throws Exception {
-    // Acá va su lógica: leer el CSV de entradaDir.resolve(archivo), abrir la conexión con
-    // setAutoCommit(false) y matricular todo el lote en UNA transacción (commit al final,
-    // rollback si cualquier renglón falla). Ver el javadoc de arriba y EstudianteRepoSql.
-    throw new UnsupportedOperationException("Matrícula aún no implementada");
+ private int procesarLote(String archivo) throws Exception {
+  Path ruta = entradaDir.resolve(archivo);
+
+  if (!Files.exists(ruta)) {
+    throw new IllegalArgumentException(
+        "No existe el archivo: " + archivo);
   }
+
+  List<String> lineas = Files.readAllLines(ruta, StandardCharsets.UTF_8);
+
+  try (Connection con =
+      Conexion.getConnection(
+          config.url(),
+          config.usuario(),
+          config.contrasena())) {
+
+    con.setAutoCommit(false);
+
+    try {
+      int matriculados = 0;
+
+      for (String linea : lineas) {
+        if (linea == null || linea.trim().isEmpty()) {
+          continue;
+        }
+
+        String[] partes = linea.split(",");
+
+        if (partes.length != 2) {
+          throw new IllegalArgumentException(
+              "Formato inválido: " + linea);
+        }
+
+        String carnet = partes[0].trim();
+        String codigoSeccion = partes[1].trim();
+
+        int estudianteId;
+
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT id FROM estudiante WHERE carnet=?")) {
+
+          ps.setString(1, carnet);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+              throw new IllegalArgumentException(
+                  "No existe estudiante con carnet " + carnet);
+            }
+
+            estudianteId = rs.getInt("id");
+          }
+        }
+
+        int seccionId;
+        int capacidad;
+
+        String sqlSeccion =
+            "SELECT s.id, a.capacidad "
+                + "FROM seccion s "
+                + "JOIN aula a ON s.aula_id = a.id "
+                + "WHERE s.codigo=?";
+
+        try (PreparedStatement ps = con.prepareStatement(sqlSeccion)) {
+          ps.setString(1, codigoSeccion);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+              throw new IllegalArgumentException(
+                  "No existe sección con código " + codigoSeccion);
+            }
+
+            seccionId = rs.getInt("id");
+            capacidad = rs.getInt("capacidad");
+          }
+        }
+
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT COUNT(*) FROM matricula "
+                    + "WHERE seccion_id=? AND estudiante_id=?")) {
+
+          ps.setInt(1, seccionId);
+          ps.setInt(2, estudianteId);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            rs.next();
+
+            if (rs.getInt(1) > 0) {
+              throw new IllegalArgumentException(
+                  "El estudiante "
+                      + carnet
+                      + " ya está matriculado en "
+                      + codigoSeccion);
+            }
+          }
+        }
+
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "SELECT COUNT(*) FROM matricula WHERE seccion_id=?")) {
+
+          ps.setInt(1, seccionId);
+
+          try (ResultSet rs = ps.executeQuery()) {
+            rs.next();
+
+            if (rs.getInt(1) >= capacidad) {
+              throw new IllegalArgumentException(
+                  "La sección " + codigoSeccion + " está llena");
+            }
+          }
+        }
+
+        try (PreparedStatement ps =
+            con.prepareStatement(
+                "INSERT INTO matricula "
+                    + "(seccion_id, estudiante_id) VALUES (?, ?)")) {
+
+          ps.setInt(1, seccionId);
+          ps.setInt(2, estudianteId);
+          ps.executeUpdate();
+        }
+
+        matriculados++;
+      }
+
+      con.commit();
+      return matriculados;
+
+    } catch (Exception e) {
+      con.rollback();
+      throw e;
+
+    } finally {
+      con.setAutoCommit(true);
+    }
+  }
+ }
 }

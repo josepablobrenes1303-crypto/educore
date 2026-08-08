@@ -341,6 +341,22 @@ cfg.routes.post(
       List<Seccion> secciones = seccionController.listar();
       ctx.json(Dtos.SeccionDto.listaDesde(secciones));
     });
+   
+   cfg.routes.post(
+    "/api/secciones",
+    ctx -> {
+      Dtos.SeccionRequest r =
+          ctx.bodyAsClass(Dtos.SeccionRequest.class);
+
+      Seccion creada =
+          seccionController.registrar(
+              r.codigo(),
+              r.nombre(),
+              r.aulaId(),
+              r.docenteId());
+
+      ctx.status(201).json(Dtos.SeccionDto.desde(creada));
+    });
 
    cfg.routes.post(
     "/api/secciones/{id}/estudiantes",
@@ -402,9 +418,7 @@ cfg.routes.delete(
 
       ctx.status(204);
     });
-
-  
-  }
+}
 
   // ── Matrícula (puente HTTP→socket) ──
 

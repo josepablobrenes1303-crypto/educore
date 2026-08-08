@@ -1,5 +1,9 @@
 package edu.uam.educore.api;
 
+
+import edu.uam.educore.controller.SeccionController;
+import edu.uam.educore.dao.SeccionRepoSql;
+import edu.uam.educore.model.academico.Seccion;
 import edu.uam.educore.api.Dtos.EstudianteDto;
 import edu.uam.educore.api.Dtos.EstudianteRequest;
 import edu.uam.educore.api.Dtos.MatriculaRequest;
@@ -71,6 +75,24 @@ try {
 
 EdificioController edificioController =
     new EdificioController(edificioRepo);
+
+Repositorio<Seccion> seccionRepo;
+
+try {
+  seccionRepo =
+      new SeccionRepoSql(ConfiguracionBD.desdeArchivo(".env"));
+} catch (IOException e) {
+  throw new RuntimeException(
+      "No se pudo inicializar el repositorio de secciones.", e);
+}
+
+SeccionController seccionController =
+    new SeccionController(
+        seccionRepo,
+        empleadoRepo,
+        estudianteRepo,
+        edificioRepo);
+
     Javalin app =
         Javalin.create(
             cfg -> {
@@ -95,7 +117,7 @@ EdificioController edificioController =
               registrarEstudiantes(cfg, estudianteController);
               registrarEmpleados(cfg, empleadoController);
               registrarEdificios(cfg, edificioController);
-              registrarSecciones(cfg);
+              registrarSecciones(cfg, seccionController);
               registrarMatricula(cfg);
               registrarReporte(cfg);
             });
@@ -312,71 +334,76 @@ cfg.routes.post(
 
   // ── Secciones (P1 de cada grupo — sin controlador de nombre fijo) ──
 
-  private static void registrarSecciones(JavalinConfig cfg) {
-    cfg.routes.get(
-        "/api/secciones",
-        ctx -> {
-          // TODO(estudiante · P1): reemplacen este bloque por su código. Ej.:
-          //   List<Seccion> secciones = MiControladorSeccion.listar();
-          //   ctx.json(SeccionDto.listaDesde(secciones));
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+  private static void registrarSecciones(JavalinConfig cfg, SeccionController seccionController) {
+   cfg.routes.get(
+    "/api/secciones",
+    ctx -> {
+      List<Seccion> secciones = seccionController.listar();
+      ctx.json(Dtos.SeccionDto.listaDesde(secciones));
+    });
 
-    cfg.routes.post(
-        "/api/secciones",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el body y llamen a su método de registro. Ej.:
-          //   SeccionRequest r = ctx.bodyAsClass(SeccionRequest.class);
-          //   Seccion creada = MiControladorSeccion.registrar(r.codigo(), r.nombre(),
-          //       r.aulaId(), r.docenteId());
-          //   ctx.status(201).json(SeccionDto.desde(creada));
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+   cfg.routes.post(
+    "/api/secciones/{id}/estudiantes",
+    ctx -> {
+      int seccionId = Integer.parseInt(ctx.pathParam("id"));
 
-    cfg.routes.put(
-        "/api/secciones/{id}",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id y el body, y llamen a su método de
-          // actualización. Ej.:
-          //   int id = Integer.parseInt(ctx.pathParam("id"));
-          //   SeccionRequest r = ctx.bodyAsClass(SeccionRequest.class);
-          //   Seccion actualizada = MiControladorSeccion.actualizar(id, r.codigo(), r.nombre(),
-          //       r.aulaId(), r.docenteId());
-          //   ctx.json(SeccionDto.desde(actualizada));
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+      Dtos.InscripcionRequest r =
+          ctx.bodyAsClass(Dtos.InscripcionRequest.class);
 
-    cfg.routes.delete(
-        "/api/secciones/{id}",
-        ctx -> {
-          // TODO(estudiante · P1): llamen a su método de eliminación. Ej.:
-          //   MiControladorSeccion.eliminar(Integer.parseInt(ctx.pathParam("id")));
-          //   ctx.status(204);
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+      Seccion actualizada =
+          seccionController.agregarEstudiante(
+              seccionId,
+              r.estudianteId());
 
-    cfg.routes.post(
-        "/api/secciones/{id}/estudiantes",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id, el body y llamen a su método para
-          // inscribir un estudiante. Ej.:
-          //   int seccionId = Integer.parseInt(ctx.pathParam("id"));
-          //   InscripcionRequest r = ctx.bodyAsClass(InscripcionRequest.class);
-          //   MiControladorSeccion.inscribir(seccionId, r.estudianteId());
-          //   ctx.json(SeccionDto.desde(MiControladorSeccion.buscarPorId(seccionId)));
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+      ctx.json(Dtos.SeccionDto.desde(actualizada));
+    });
 
-    cfg.routes.delete(
-        "/api/secciones/{id}/estudiantes/{estudianteId}",
-        ctx -> {
-          // TODO(estudiante · P1): llamen a su método para remover un estudiante. Ej.:
-          //   int seccionId = Integer.parseInt(ctx.pathParam("id"));
-          //   int estudianteId = Integer.parseInt(ctx.pathParam("estudianteId"));
-          //   MiControladorSeccion.remover(seccionId, estudianteId);
-          //   ctx.status(204);
-          ctx.status(501).json(Map.of("error", "secciones: pendiente de implementar"));
-        });
+ cfg.routes.put(
+    "/api/secciones/{id}",
+    ctx -> {
+      int id = Integer.parseInt(ctx.pathParam("id"));
+
+      Dtos.SeccionRequest r =
+          ctx.bodyAsClass(Dtos.SeccionRequest.class);
+
+      Seccion actualizada =
+          seccionController.actualizar(
+              id,
+              r.codigo(),
+              r.nombre(),
+              r.aulaId(),
+              r.docenteId());
+
+      ctx.json(Dtos.SeccionDto.desde(actualizada));
+    });
+
+cfg.routes.delete(
+    "/api/secciones/{id}",
+    ctx -> {
+      int id = Integer.parseInt(ctx.pathParam("id"));
+
+      seccionController.eliminar(id);
+
+      ctx.status(204);
+    });
+
+   cfg.routes.delete(
+    "/api/secciones/{id}/estudiantes/{estudianteId}",
+    ctx -> {
+      int seccionId =
+          Integer.parseInt(ctx.pathParam("id"));
+
+      int estudianteId =
+          Integer.parseInt(ctx.pathParam("estudianteId"));
+
+      seccionController.removerEstudiante(
+          seccionId,
+          estudianteId);
+
+      ctx.status(204);
+    });
+
+  
   }
 
   // ── Matrícula (puente HTTP→socket) ──

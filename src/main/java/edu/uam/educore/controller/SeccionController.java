@@ -53,6 +53,50 @@ public class SeccionController {
     Optional<Seccion> resultado = seccionRepo.buscarPorId(id);
     return resultado.orElse(null);
   }
+  
+  public Seccion actualizar(
+    int id,
+    String codigo,
+    String nombre,
+    int aulaId,
+    int docenteId)
+    throws Exception {
+
+  validarTexto(codigo, "El código de la sección es obligatorio.");
+  validarTexto(nombre, "El nombre del curso es obligatorio.");
+
+  Seccion seccion = buscarPorId(id);
+  if (seccion == null) {
+    throw new IllegalArgumentException(
+        "No existe sección con ID " + id + ".");
+  }
+
+  Empleado docente = empleadoRepo.buscarPorId(docenteId).orElse(null);
+  if (docente == null) {
+    throw new IllegalArgumentException(
+        "No existe empleado con ID " + docenteId + ".");
+  }
+
+  if (docente.getTipoEmpleado() != TipoEmpleado.DOCENTE) {
+    throw new IllegalArgumentException(
+        "El empleado seleccionado no es DOCENTE.");
+  }
+
+  Aula aula = buscarAulaPorId(aulaId);
+  if (aula == null) {
+    throw new IllegalArgumentException(
+        "No existe aula con ID " + aulaId + ".");
+  }
+
+  seccion.setCodigo(codigo);
+  seccion.setNombre(nombre);
+  seccion.setAula(aula);
+  seccion.setDocente(docente);
+
+  seccionRepo.actualizar(seccion);
+
+  return seccion;
+}
 
   public Seccion agregarEstudiante(int seccionId, int estudianteId) throws Exception {
     Seccion seccion = buscarPorId(seccionId);

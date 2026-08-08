@@ -1,7 +1,7 @@
 package edu.uam.educore.model.infraestructura;
 
 public class Aula {
-  private final int id;
+  private int id;
   private String numero;
   private int capacidad;
   private TipoAula tipo;
@@ -19,6 +19,10 @@ public class Aula {
     return id;
   }
 
+  public void setId(int id) {
+  this.id = id;
+}
+  
   public String getNumero() {
     return numero;
   }

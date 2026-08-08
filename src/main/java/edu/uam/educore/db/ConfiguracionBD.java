@@ -26,7 +26,10 @@ try (InputStream in = new FileInputStream(ruta)) {
     props.load(in);
 }
     String host = props.getProperty("DB_HOST");
-    String puerto = props.getProperty("DB_HOST_PORT", PUERTO_POR_DEFECTO);
+   String puerto =
+    "db".equalsIgnoreCase(host)
+        ? PUERTO_POR_DEFECTO
+        : props.getProperty("DB_HOST_PORT", PUERTO_POR_DEFECTO);
     String base = props.getProperty("DB_NAME");
     
     String url =

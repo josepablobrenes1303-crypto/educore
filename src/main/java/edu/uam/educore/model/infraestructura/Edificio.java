@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Edificio {
-  private final int id;
+  private int id;
   private String codigo;
   private String nombre;
   private final List<Aula> aulas = new ArrayList<>();
@@ -16,8 +16,12 @@ public class Edificio {
   }
 
   public int getId() {
-    return id;
-  }
+  return id;
+}
+
+public void setId(int id) {
+  this.id = id;
+}
 
   public String getCodigo() {
     return codigo;

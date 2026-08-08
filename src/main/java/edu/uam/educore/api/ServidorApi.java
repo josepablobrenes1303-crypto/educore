@@ -10,6 +10,11 @@ import edu.uam.educore.api.Dtos.EmpleadoDto;
 import edu.uam.educore.api.Dtos.EmpleadoRequest;
 import edu.uam.educore.controller.EmpleadoController;
 import edu.uam.educore.dao.EmpleadoRepoSql;
+import edu.uam.educore.controller.EdificioController;
+import edu.uam.educore.dao.EdificioRepoSql;
+import edu.uam.educore.model.infraestructura.Aula;
+import edu.uam.educore.model.infraestructura.TipoAula;
+import edu.uam.educore.model.infraestructura.Edificio;
 import edu.uam.educore.model.personas.Empleado;
 import edu.uam.educore.dao.Repositorio;
 import edu.uam.educore.db.ConfiguracionBD;
@@ -55,6 +60,17 @@ try {
 
 EmpleadoController empleadoController = new EmpleadoController(empleadoRepo);
 
+Repositorio<Edificio> edificioRepo;
+
+try {
+  edificioRepo = new EdificioRepoSql(ConfiguracionBD.desdeArchivo(".env"));
+} catch (IOException e) {
+  throw new RuntimeException(
+      "No se pudo inicializar el repositorio de edificios.", e);
+}
+
+EdificioController edificioController =
+    new EdificioController(edificioRepo);
     Javalin app =
         Javalin.create(
             cfg -> {
@@ -78,7 +94,7 @@ EmpleadoController empleadoController = new EmpleadoController(empleadoRepo);
 
               registrarEstudiantes(cfg, estudianteController);
               registrarEmpleados(cfg, empleadoController);
-              registrarEdificios(cfg);
+              registrarEdificios(cfg, edificioController);
               registrarSecciones(cfg);
               registrarMatricula(cfg);
               registrarReporte(cfg);
@@ -193,85 +209,105 @@ EmpleadoController empleadoController = new EmpleadoController(empleadoRepo);
 
   // ── Edificios / Aulas (P1 de cada grupo — sin controlador de nombre fijo) ──
 
-  private static void registrarEdificios(JavalinConfig cfg) {
-    cfg.routes.get(
-        "/api/edificios",
-        ctx -> {
-          // TODO(estudiante · P1): reemplacen este bloque por su código. Ej.:
-          //   List<Edificio> edificios = MiControladorEdificio.listar();
-          //   ctx.json(EdificioDto.listaDesde(edificios));
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+  private static void registrarEdificios(JavalinConfig cfg, EdificioController edificioController) {
+  cfg.routes.get(
+    "/api/edificios",
+    ctx -> {
+      List<Edificio> edificios = edificioController.listar();
+      ctx.json(edificios);
+    });
+  
+cfg.routes.post(
+    "/api/edificios",
+    ctx -> {
+      Map<String, String> body = ctx.bodyAsClass(Map.class);
 
-    cfg.routes.post(
-        "/api/edificios",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el body y llamen a su método de registro. Ej.:
-          //   EdificioRequest r = ctx.bodyAsClass(EdificioRequest.class);
-          //   Edificio creado = MiControladorEdificio.registrar(r.codigo(), r.nombre());
-          //   ctx.status(201).json(EdificioDto.desde(creado));
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+      String codigo = body.get("codigo");
+      String nombre = body.get("nombre");
 
-    cfg.routes.put(
-        "/api/edificios/{id}",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id y el body, y llamen a su método de
-          // actualización. Ej.:
-          //   int id = Integer.parseInt(ctx.pathParam("id"));
-          //   EdificioRequest r = ctx.bodyAsClass(EdificioRequest.class);
-          //   Edificio actualizado = MiControladorEdificio.actualizar(id, r.codigo(), r.nombre());
-          //   ctx.json(EdificioDto.desde(actualizado));
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+      Edificio creado =
+          edificioController.registrar(codigo, nombre);
 
-    cfg.routes.delete(
-        "/api/edificios/{id}",
-        ctx -> {
-          // TODO(estudiante · P1): llamen a su método de eliminación. Ej.:
-          //   MiControladorEdificio.eliminar(Integer.parseInt(ctx.pathParam("id")));
-          //   ctx.status(204);
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+      ctx.status(201).json(creado);
+    });
 
-    cfg.routes.post(
-        "/api/edificios/{id}/aulas",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id, el body y llamen a su método para agregar
-          // un aula. Ej.:
-          //   int edificioId = Integer.parseInt(ctx.pathParam("id"));
-          //   AulaRequest r = ctx.bodyAsClass(AulaRequest.class);
-          //   Aula aula = MiControladorEdificio.agregarAula(edificioId, r.numero(),
-          //       r.capacidad(), r.tipo() != null ? r.tipo() : TipoAula.REGULAR);
-          //   ctx.status(201).json(AulaDto.desde(aula));
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+   cfg.routes.put(
+    "/api/edificios/{id}",
+    ctx -> {
+      int id = Integer.parseInt(ctx.pathParam("id"));
 
-    cfg.routes.put(
-        "/api/edificios/{id}/aulas/{aulaId}",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id del edificio, el id del aula y el body, y
-          // llamen a su método para actualizar un aula. Ej.:
-          //   int edificioId = Integer.parseInt(ctx.pathParam("id"));
-          //   int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
-          //   AulaRequest r = ctx.bodyAsClass(AulaRequest.class);
-          //   Aula aula = MiControladorEdificio.actualizarAula(edificioId, aulaId, r.numero(),
-          //       r.capacidad(), r.tipo() != null ? r.tipo() : TipoAula.REGULAR);
-          //   ctx.json(AulaDto.desde(aula));
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+      Map<String, String> body = ctx.bodyAsClass(Map.class);
+
+      String codigo = body.get("codigo");
+      String nombre = body.get("nombre");
+
+      Edificio actualizado =
+          edificioController.actualizar(id, codigo, nombre);
+
+      ctx.json(actualizado);
+    });
+   
 
     cfg.routes.delete(
-        "/api/edificios/{id}/aulas/{aulaId}",
-        ctx -> {
-          // TODO(estudiante · P1): parseen el id del edificio y el id del aula, y llamen a su
-          // método para eliminar un aula. Ej.:
-          //   int edificioId = Integer.parseInt(ctx.pathParam("id"));
-          //   int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
-          //   MiControladorEdificio.eliminarAula(edificioId, aulaId);
-          //   ctx.status(204);
-          ctx.status(501).json(Map.of("error", "edificios: pendiente de implementar"));
-        });
+    "/api/edificios/{id}",
+    ctx -> {
+      int id = Integer.parseInt(ctx.pathParam("id"));
+
+      edificioController.eliminar(id);
+
+      ctx.status(204);
+    });
+
+   
+      cfg.routes.post(
+    "/api/edificios/{id}/aulas",
+    ctx -> {
+      int edificioId = Integer.parseInt(ctx.pathParam("id"));
+
+      Map<String, Object> body = ctx.bodyAsClass(Map.class);
+
+      String numero = (String) body.get("numero");
+      int capacidad = ((Number) body.get("capacidad")).intValue();
+      TipoAula tipo =
+          TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
+
+      Aula aula =
+          edificioController.agregarAula(
+              edificioId, numero, capacidad, tipo);
+
+      ctx.status(201).json(aula);
+    });
+    
+    cfg.routes.put(
+    "/api/edificios/{id}/aulas/{aulaId}",
+    ctx -> {
+      int edificioId = Integer.parseInt(ctx.pathParam("id"));
+      int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+
+      Map<String, Object> body = ctx.bodyAsClass(Map.class);
+
+      String numero = (String) body.get("numero");
+      int capacidad = ((Number) body.get("capacidad")).intValue();
+      TipoAula tipo =
+          TipoAula.valueOf(((String) body.get("tipo")).toUpperCase());
+
+      Aula aula =
+          edificioController.actualizarAula(
+              edificioId, aulaId, numero, capacidad, tipo);
+
+      ctx.json(aula);
+    });
+
+    cfg.routes.delete(
+    "/api/edificios/{id}/aulas/{aulaId}",
+    ctx -> {
+      int edificioId = Integer.parseInt(ctx.pathParam("id"));
+      int aulaId = Integer.parseInt(ctx.pathParam("aulaId"));
+
+      edificioController.eliminarAula(edificioId, aulaId);
+
+      ctx.status(204);
+    });
   }
 
   // ── Secciones (P1 de cada grupo — sin controlador de nombre fijo) ──
